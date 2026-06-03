@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1D4ED8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>📊 경제캘린더</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; background:#FBFAF7; color:#1F1F1F;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+    font-size:16px; line-height:1.5; overscroll-behavior:none;
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+  }
+  button { font-family:inherit; cursor:pointer; }
+
+  /* ── 상단 바 ── */
+  .topbar { position:sticky; top:0; z-index:20; background:#FBFAF7;
+    padding:14px 16px 10px; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid #EEE8DB; }
+  .brand { font-weight:800; font-size:20px; letter-spacing:-0.02em; }
+  .brand .dot { color:#1D4ED8; }
+  .today-btn { background:#1D4ED8; color:white; border:0; padding:7px 14px; border-radius:999px;
+    font-size:13px; font-weight:700; }
+
+  /* ── 월 네비 ── */
+  .monthnav { display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px 6px; }
+  .monthnav h2 { margin:0; font-size:22px; font-weight:800; letter-spacing:-0.02em; }
+  .nav-btn { background:transparent; border:0; font-size:24px; color:#1F1F1F; padding:4px 12px;
+    border-radius:8px; }
+  .nav-btn:active { background:#EFEADC; }
+
+  /* ── 캘린더 ── */
+  .weekdays { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px;
+    font-size:11px; color:#9C8E73; text-align:center; padding-top:6px; padding-bottom:4px; }
+  .weekdays div:first-child { color:#C53030; }
+  .weekdays div:last-child  { color:#2563EB; }
+
+  .grid { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px 16px;
+    gap:2px; }
+  .cell { aspect-ratio:1/1.15; position:relative; border-radius:10px;
+    padding:6px 4px 4px; display:flex; flex-direction:column; align-items:center;
+    background:transparent; transition:background .15s; }
+  .cell.empty { visibility:hidden; }
+  .cell:active { background:#EFEADC; }
+  .cell.today .num { background:#1D4ED8; color:white; }
+  .cell.selected { background:#E8E2D0; }
+  .cell.sat .num { color:#2563EB; }
+  .cell.sun .num { color:#C53030; }
+  .num { font-size:14px; font-weight:600; width:26px; height:26px; line-height:26px;
+    text-align:center; border-radius:50%; margin-bottom:2px; }
+  .dots { display:flex; gap:2px; flex-wrap:wrap; justify-content:center; max-width:100%; }
+  .dot { width:5px; height:5px; border-radius:50%; flex:0 0 5px; }
+  .dot.S { background:#DC2626; }
+  .dot.A { background:#EC4899; }
+  .dot.B { background:#F97316; }
+  .dot.C { background:#EAB308; }
+
+  /* ── 일정 시트 ── */
+  .sheet { background:white; margin:0 12px 16px; border-radius:18px;
+    box-shadow:0 1px 0 #EEE8DB, 0 8px 24px -12px rgba(50,40,20,0.12);
+    padding:16px 18px 20px; }
+  .sheet-head { display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:10px; }
+  .sheet-date { font-weight:800; font-size:18px; letter-spacing:-0.02em; }
+  .sheet-cnt { color:#9C8E73; font-size:13px; }
+  .empty-msg { color:#9C8E73; font-size:14px; padding:12px 0; text-align:center; }
+
+  .ev { padding:14px 0; border-top:1px solid #F0EADB; }
+  .ev:first-of-type { border-top:0; padding-top:6px; }
+  .ev-title { font-weight:700; font-size:16px; margin-bottom:6px; letter-spacing:-0.01em; }
+  .grade { display:inline-block; font-size:11px; font-weight:800; padding:2px 7px;
+    border-radius:6px; margin-right:6px; vertical-align:middle; letter-spacing:0.02em; }
+  .grade.S { background:#FEE2E2; color:#B91C1C; }
+  .grade.A { background:#FCE7F3; color:#BE185D; }
+  .grade.B { background:#FFEDD5; color:#C2410C; }
+  .grade.C { background:#FEF3C7; color:#A16207; }
+  .bar { height:5px; background:#F0EADB; border-radius:3px; overflow:hidden; margin:4px 0 10px; }
+  .bar > div { height:100%; background:#1D4ED8; border-radius:3px; }
+  .ev.S .bar > div { background:#DC2626; }
+  .ev.A .bar > div { background:#EC4899; }
+  .ev.B .bar > div { background:#F97316; }
+  .ev.C .bar > div { background:#EAB308; }
+
+  .scen { background:#FAF7EE; border-left:3px solid #D4C9A8; padding:8px 10px;
+    border-radius:6px; margin-top:6px; font-size:14px; line-height:1.55; }
+  .scen.bull { border-left-color:#16A34A; background:#F0FDF4; }
+  .scen.bear { border-left-color:#DC2626; background:#FEF2F2; }
+  .scen.tip  { border-left-color:#1D4ED8; background:#EFF6FF; }
+  .scen b { font-weight:700; }
+
+  /* ── 하단 탭 ── */
+  .tabs { position:sticky; bottom:0; background:#FBFAF7;
+    border-top:1px solid #EEE8DB; display:flex;
+    padding: 4px 0 calc(4px + env(safe-area-inset-bottom));
+  }
+  .tab { flex:1; text-align:center; padding:8px 0 6px; background:transparent; border:0;
+    color:#9C8E73; font-size:11px; font-weight:600; }
+  .tab .ic { display:block; font-size:20px; margin-bottom:1px; line-height:1; }
+  .tab.active { color:#1D4ED8; }
+
+  /* ── 화면 전환 ── */
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* ── 오늘 화면 ── */
+  .today-head { padding:14px 18px 0; }
+  .today-head .label { color:#9C8E73; font-size:13px; font-weight:600; }
+  .today-head .date { font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:2px 0 10px; }
+  .week-strip { display:flex; gap:8px; padding:8px 16px 0; overflow-x:auto;
+    -webkit-overflow-scrolling:touch; }
+  .week-strip .pill { flex:0 0 auto; padding:10px 12px; border-radius:14px;
+    background:white; border:1px solid #EEE8DB; min-width:62px; text-align:center; }
+  .week-strip .pill .d { font-size:11px; color:#9C8E73; font-weight:600; }
+  .week-strip .pill .n { font-size:18px; font-weight:800; margin-top:2px; }
+  .week-strip .pill .grades { display:flex; gap:2px; justify-content:center; margin-top:4px; min-height:5px; }
+  .week-strip .pill.active { background:#1D4ED8; border-color:#1D4ED8; color:white; }
+  .week-strip .pill.active .d { color:rgba(255,255,255,0.85); }
+
+  /* ── 설정 화면 ── */
+  .settings { padding:16px 18px 32px; }
+  .settings h3 { font-size:13px; color:#9C8E73; letter-spacing:0.04em; text-transform:uppercase;
+    font-weight:700; margin:20px 0 8px; }
+  .settings h3:first-child { margin-top:0; }
+  .row { background:white; border-radius:12px; padding:14px 16px; margin-bottom:8px;
+    border:1px solid #EEE8DB; font-size:15px; display:flex; align-items:center;
+    justify-content:space-between; }
+  .row .lbl { font-weight:600; }
+  .row .sub { color:#9C8E73; font-size:13px; }
+  .legend-row { display:flex; gap:14px; align-items:center; padding:10px 0; font-size:14px; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; flex:0 0 14px; }
+
+  .install-banner { background:#1D4ED8; color:white; margin:12px 18px 0;
+    border-radius:12px; padding:12px 14px; font-size:14px; display:none; }
+  .install-banner.show { display:block; }
+  .install-banner button { background:white; color:#1D4ED8; border:0; padding:6px 12px;
+    border-radius:8px; font-weight:700; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<!-- ============ 캘린더 화면 ============ -->
+<section class="screen active" id="screen-cal">
+  <div class="topbar">
+    <div class="brand">📊 경제캘린더<span class="dot">.</span></div>
+    <button class="today-btn" onclick="goToday()">오늘</button>
+  </div>
+
+  <div class="monthnav">
+    <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+    <h2 id="month-title">2026년 6월</h2>
+    <button class="nav-btn" onclick="changeMonth(1)">›</button>
+  </div>
+
+  <div class="weekdays">
+    <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+  </div>
+  <div class="grid" id="grid"></div>
+
+  <div id="install-banner" class="install-banner">
+    📲 홈 화면에 추가하면 진짜 앱처럼 쓸 수 있어요
+    <br><button id="install-btn">설치하기</button>
+  </div>
+
+  <div class="sheet" id="day-sheet">
+    <div class="sheet-head">
+      <div class="sheet-date" id="sheet-date">날짜 선택</div>
+      <div class="sheet-cnt" id="sheet-cnt"></div>
+    </div>
+    <div id="sheet-events"></div>
+  </div>
+</section>
+
+<!-- ============ 오늘 화면 ============ -->
+<section class="screen" id="screen-today">
+  <div class="topbar">
+    <div class="brand">오늘의 일정</div>
+  </div>
+  <div class="today-head">
+    <div class="label" id="today-label">오늘</div>
+    <div class="date" id="today-date"></div>
+  </div>
+  <div class="week-strip" id="week-strip"></div>
+  <div class="sheet" id="today-sheet">
+    <div id="today-events"></div>
+  </div>
+</section>
+
+<!-- ============ 설정 화면 ============ -->
+<section class="screen" id="screen-settings">
+  <div class="topbar">
+    <div class="brand">설정</div>
+  </div>
+  <div class="settings">
+    <h3>등급 안내</h3>
+    <div class="row" style="flex-direction:column; align-items:stretch;">
+      <div class="legend-row"><div class="legend-dot" style="background:#DC2626"></div><b>S급</b> · 시장 직격탄 (FOMC·CPI·NFP 등)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#EC4899"></div><b>A급</b> · 강한 영향 (PCE·잭슨홀)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#F97316"></div><b>B급</b> · 간접 영향 (BOJ·유로 CPI)</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#EAB308"></div><b>C급</b> · 보조 지표 (옵션만기)</div>
+    </div>
+
+    <h3>알림</h3>
+    <div class="row"><div><div class="lbl">S급 24시간 전 알림</div><div class="sub">곧 지원 예정</div></div></div>
+    <div class="row"><div><div class="lbl">매일 아침 브리핑</div><div class="sub">곧 지원 예정</div></div></div>
+
+    <h3>데이터</h3>
+    <div class="row"><div><div class="lbl">버전</div><div class="sub" id="ver">v1.0.0 (2026 H2)</div></div></div>
+    <div class="row"><div><div class="lbl">이벤트 수</div><div class="sub" id="ev-count">— 개</div></div></div>
+
+    <h3>정보</h3>
+    <div class="row"><div><div class="lbl">개인정보 처리방침</div><div class="sub">곧 게시</div></div></div>
+    <div class="row"><div><div class="lbl">문의</div><div class="sub">tjddk75475475@gmail.com</div></div></div>
+  </div>
+</section>
+
+<!-- ============ 하단 탭 ============ -->
+<nav class="tabs">
+  <button class="tab active" data-screen="cal" onclick="switchTab('cal')"><span class="ic">📅</span>캘린더</button>
+  <button class="tab" data-screen="today" onclick="switchTab('today')"><span class="ic">⭐</span>오늘</button>
+  <button class="tab" data-screen="settings" onclick="switchTab('settings')"><span class="ic">⚙️</span>설정</button>
+</nav>
+
+<script>
+// ====================================================================
+// 데이터 (Apps Script 본체와 동일한 56개 이벤트)
+// ====================================================================
+const GRADE = {
+  S: { label:'S급', name:'시장 직격탄', bar:10 },
+  A: { label:'A급', name:'강한 영향',   bar:8  },
+  B: { label:'B급', name:'간접 영향',   bar:6  },
+  C: { label:'C급', name:'보조 지표',   bar:4  },
+};
+
+const TPL = {
+  FOMC:{bull:'동결 + 점도표 인하 시사 → 달러↓ → KOSPI↑. 비둘기파 발언.',
+        bear:'매파 발언 + 점도표 상향 → 달러↑ → 외국인 이탈 → KOSPI↓.',
+        tip:'발표 한국 새벽 3시(서머)/4시(동절). 순서: 금리결정 → 성명서 → 점도표 → 의장 기자회견.'},
+  CPI:{bull:'예상보다 낮음 → 금리 인하 기대 강화 → 달러↓ → KOSPI↑.',
+       bear:'예상 상회 → 인플레 재점화 우려 → 인하 후퇴 → KOSPI↓.',
+       tip:'발표 한국 21:30. Core CPI(에너지·식품 제외)가 진짜 신호.'},
+  NFP:{bull:'예상보다 약함 → 연준 인하 기대 ↑ → KOSPI↑.',
+       bear:'예상보다 강함 → 인하 기대 후퇴 → 달러↑ → KOSPI↓.',
+       tip:'매월 첫째 금요일 21:30. "경제 좋은 뉴스 = 주가 하락" 역설 가능.'},
+  PCE:{bull:'예상 하회 → 연준 선호 지표 안정 → 인하 여력 확인 → KOSPI↑.',
+       bear:'예상 상회 → 기조 인플레 끈적 → 인하 지연 우려 → KOSPI↓.',
+       tip:'연준이 CPI보다 더 신뢰하는 물가지표. Core PCE 보는 게 정석.'},
+  KR_TRADE:{bull:'반도체 수출 전년비 +30% 이상 → 삼성·하이닉스 급등 → KOSPI 상승.',
+            bear:'반도체 수출 감소 → 하락 압력.',
+            tip:'매월 1일 새벽 6시 발표(전월). 반도체가 전체 수출의 약 20%.'},
+  KR_BOK:{bull:'인하 또는 비둘기 시그널 → 내수 부양 기대 → KOSPI↑.',
+          bear:'매파 동결 + 환율 우려 언급 → 외국인 이탈 → KOSPI↓.',
+          tip:'연 8회. Fed 결정 직후 회의는 항상 관망.'},
+  BOJ:{bull:'동결 + 완화 유지 → 엔↓ → 캐리 유지 → 글로벌 유동성 유지 → KOSPI 우호.',
+       bear:'인상 또는 인상 시사 → 엔↑ → 캐리 청산 → 신흥국 동시 하락 위험.',
+       tip:'발표 12~15시 KST(가변). 엔 캐리 청산이 핵심 리스크.'},
+  EU_CPI:{bull:'예상 상회 → ECB 매파 → EUR↑ → DXY↓ → 신흥국·KOSPI 우호.',
+          bear:'예상 하회 → ECB 인하 기대 → EUR↓ → DXY↑ → 외국인 이탈 압력.',
+          tip:'매월 말일 전후 18:00 KST (Flash 속보치).'},
+  WITCH:{bull:'만기일 전날 과도한 하락 → 다음날 반등 가능.',
+         bear:'선물+옵션 동시만기로 변동성 극대. 외국인·기관 대량 청산 → 급락 가능.',
+         tip:'3·6·9·12월 둘째 목요일. 당일 신규 진입 자제.'},
+  KR_OPT:{bull:'월간 옵션만기. 정상 흐름이면 영향 제한적.',
+          bear:'외국인 대량 매도 누적 시 만기일 청산 가속.',
+          tip:'매월 둘째 목요일. 네마녀가 아닌 달은 변동성 작음.'},
+  US_OPT:{bull:'SPX 옵션만기. 정상 흐름이면 영향 제한적.',
+          bear:'대규모 풋 청산 시 미국發 변동성 확대 → 다음날 KOSPI 갭다운 가능.',
+          tip:'미국 셋째 금요일 SPX 옵션만기. VIX 함께 봐야 함.'},
+  JACKSON:{bull:'의장 비둘기 시그널 → 글로벌 위험자산 랠리.',
+           bear:'의장 매파 시그널("higher for longer") → 글로벌 동시 하락.',
+           tip:'매년 8월 말 와이오밍. 연준 의장 기조연설이 하반기 정책 시그널.'},
+};
+
+// 형식: [start, end|null, grade, tpl, title]
+const EVENTS = [
+  ['2026-06-01',null,'S','KR_TRADE','🇰🇷 한국 5월 수출입'],
+  ['2026-06-05',null,'S','NFP','🇺🇸 미국 NFP (5월 고용)'],
+  ['2026-06-10',null,'S','CPI','🇺🇸 미국 CPI (5월)'],
+  ['2026-06-11',null,'S','WITCH','🇰🇷 네마녀의날'],
+  ['2026-06-16','2026-06-17','S','FOMC','🇺🇸 FOMC 금리결정 (점도표)'],
+  ['2026-06-16','2026-06-17','B','BOJ','🇯🇵 일본 BOJ 금리결정'],
+  ['2026-06-19',null,'B','US_OPT','🇺🇸 미국 옵션만기 (SPX)'],
+  ['2026-06-26',null,'A','PCE','🇺🇸 미국 PCE (5월)'],
+  ['2026-06-30',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash'],
+
+  ['2026-07-01',null,'S','KR_TRADE','🇰🇷 한국 6월 수출입'],
+  ['2026-07-03',null,'S','NFP','🇺🇸 미국 NFP (6월 고용)'],
+  ['2026-07-09',null,'C','KR_OPT','🇰🇷 한국 옵션만기'],
+  ['2026-07-15',null,'S','CPI','🇺🇸 미국 CPI (6월)'],
+  ['2026-07-16',null,'S','KR_BOK','🇰🇷 한국 금통위'],
+  ['2026-07-28','2026-07-29','S','FOMC','🇺🇸 FOMC 금리결정'],
+  ['2026-07-30','2026-07-31','B','BOJ','🇯🇵 일본 BOJ 금리결정'],
+  ['2026-07-31',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash'],
+  ['2026-07-31',null,'A','PCE','🇺🇸 미국 PCE (6월)'],
+
+  ['2026-08-03',null,'S','KR_TRADE','🇰🇷 한국 7월 수출입'],
+  ['2026-08-07',null,'S','NFP','🇺🇸 미국 NFP (7월 고용)'],
+  ['2026-08-12',null,'S','CPI','🇺🇸 미국 CPI (7월)'],
+  ['2026-08-13',null,'C','KR_OPT','🇰🇷 한국 옵션만기'],
+  ['2026-08-27',null,'S','KR_BOK','🇰🇷 한국 금통위'],
+  ['2026-08-27','2026-08-29','A','JACKSON','🌐 잭슨홀 심포지엄'],
+  ['2026-08-28',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash'],
+  ['2026-08-28',null,'A','PCE','🇺🇸 미국 PCE (7월)'],
+
+  ['2026-09-01',null,'S','KR_TRADE','🇰🇷 한국 8월 수출입'],
+  ['2026-09-04',null,'S','NFP','🇺🇸 미국 NFP (8월 고용)'],
+  ['2026-09-09',null,'S','CPI','🇺🇸 미국 CPI (8월)'],
+  ['2026-09-10',null,'S','WITCH','🇰🇷 네마녀의날 (3분기 마감)'],
+  ['2026-09-15','2026-09-16','S','FOMC','🇺🇸 FOMC 금리결정 (점도표)'],
+  ['2026-09-18',null,'B','US_OPT','🇺🇸 미국 옵션만기 (SPX 분기)'],
+  ['2026-09-24',null,'B','BOJ','🇯🇵 일본 BOJ 금리결정'],
+  ['2026-09-25',null,'A','PCE','🇺🇸 미국 PCE (8월)'],
+  ['2026-09-30',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash'],
+
+  ['2026-10-01',null,'S','KR_TRADE','🇰🇷 한국 9월 수출입'],
+  ['2026-10-02',null,'S','NFP','🇺🇸 미국 NFP (9월 고용)'],
+  ['2026-10-08',null,'C','KR_OPT','🇰🇷 한국 옵션만기'],
+  ['2026-10-14',null,'S','CPI','🇺🇸 미국 CPI (9월)'],
+  ['2026-10-22',null,'S','KR_BOK','🇰🇷 한국 금통위'],
+  ['2026-10-27','2026-10-28','S','FOMC','🇺🇸 FOMC 금리결정'],
+  ['2026-10-29','2026-10-30','B','BOJ','🇯🇵 일본 BOJ 금리결정'],
+  ['2026-10-30',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash'],
+  ['2026-10-30',null,'A','PCE','🇺🇸 미국 PCE (9월)'],
+
+  ['2026-11-02',null,'S','KR_TRADE','🇰🇷 한국 10월 수출입'],
+  ['2026-11-06',null,'S','NFP','🇺🇸 미국 NFP (10월 고용)'],
+  ['2026-11-11',null,'S','CPI','🇺🇸 미국 CPI (10월)'],
+  ['2026-11-12',null,'C','KR_OPT','🇰🇷 한국 옵션만기'],
+  ['2026-11-25',null,'A','PCE','🇺🇸 미국 PCE (10월)'],
+  ['2026-11-26',null,'S','KR_BOK','🇰🇷 한국 금통위'],
+  ['2026-11-27',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash'],
+
+  ['2026-12-01',null,'S','KR_TRADE','🇰🇷 한국 11월 수출입'],
+  ['2026-12-04',null,'S','NFP','🇺🇸 미국 NFP (11월 고용)'],
+  ['2026-12-08','2026-12-09','S','FOMC','🇺🇸 FOMC 금리결정 (점도표)'],
+  ['2026-12-09',null,'S','CPI','🇺🇸 미국 CPI (11월)'],
+  ['2026-12-10',null,'S','WITCH','🇰🇷 네마녀의날 (연말 마감)'],
+  ['2026-12-17',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash'],
+  ['2026-12-18',null,'B','US_OPT','🇺🇸 미국 옵션만기 (SPX 분기)'],
+  ['2026-12-18',null,'B','BOJ','🇯🇵 일본 BOJ 금리결정'],
+  ['2026-12-23',null,'A','PCE','🇺🇸 미국 PCE (11월)'],
+];
+
+// ====================================================================
+// 인덱스: 날짜별 이벤트 맵
+// ====================================================================
+function dateRange(start, end) {
+  const out = [];
+  const s = new Date(start + 'T00:00:00');
+  const e = end ? new Date(end + 'T00:00:00') : s;
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) {
+    out.push(d.toISOString().slice(0,10));
+  }
+  return out;
+}
+const byDate = {};
+EVENTS.forEach((ev, i) => {
+  const [s,e,g,t,title] = ev;
+  dateRange(s, e).forEach(d => {
+    (byDate[d] = byDate[d] || []).push({i, s, e, g, t, title});
+  });
+});
+const GRADE_ORDER = {S:0, A:1, B:2, C:3};
+
+// ====================================================================
+// 상태 + 렌더
+// ====================================================================
+const today = new Date();
+today.setHours(0,0,0,0);
+let viewY = today.getFullYear();
+let viewM = today.getMonth(); // 0~11
+let selected = ymd(today);
+
+function ymd(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+function parseYmd(s) { return new Date(s + 'T00:00:00'); }
+
+function renderMonth() {
+  document.getElementById('month-title').textContent = `${viewY}년 ${viewM+1}월`;
+  const first = new Date(viewY, viewM, 1);
+  const last  = new Date(viewY, viewM+1, 0);
+  const startWd = first.getDay();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  for (let i=0;i<startWd;i++) {
+    const c = document.createElement('div'); c.className='cell empty'; grid.appendChild(c);
+  }
+  for (let d=1; d<=last.getDate(); d++) {
+    const cur = new Date(viewY, viewM, d);
+    const k = ymd(cur);
+    const cell = document.createElement('button');
+    cell.className = 'cell';
+    cell.type = 'button';
+    if (cur.getDay()===0) cell.classList.add('sun');
+    if (cur.getDay()===6) cell.classList.add('sat');
+    if (k === ymd(today)) cell.classList.add('today');
+    if (k === selected) cell.classList.add('selected');
+    cell.innerHTML = `<div class="num">${d}</div>`;
+
+    const evs = (byDate[k] || []).slice().sort((a,b)=>GRADE_ORDER[a.g]-GRADE_ORDER[b.g]);
+    if (evs.length) {
+      const dots = document.createElement('div');
+      dots.className = 'dots';
+      evs.slice(0,4).forEach(ev => {
+        const dot = document.createElement('div');
+        dot.className = 'dot ' + ev.g;
+        dots.appendChild(dot);
+      });
+      cell.appendChild(dots);
+    }
+    cell.onclick = () => { selected = k; renderMonth(); renderSheet(); };
+    grid.appendChild(cell);
+  }
+}
+
+function renderSheet() {
+  const d = parseYmd(selected);
+  const wd = ['일','월','화','수','목','금','토'][d.getDay()];
+  document.getElementById('sheet-date').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 (${wd})`;
+  const evs = (byDate[selected] || []).slice().sort((a,b)=>GRADE_ORDER[a.g]-GRADE_ORDER[b.g]);
+  document.getElementById('sheet-cnt').textContent = evs.length ? `${evs.length}개 일정` : '';
+  const root = document.getElementById('sheet-events');
+  if (!evs.length) {
+    root.innerHTML = '<div class="empty-msg">이 날엔 등록된 일정이 없어요</div>';
+    return;
+  }
+  root.innerHTML = evs.map(renderEvent).join('');
+}
+
+function renderEvent(ev) {
+  const g = GRADE[ev.g];
+  const tpl = TPL[ev.t] || {bull:'',bear:'',tip:''};
+  const dur = ev.e ? ` · ${ev.s.slice(5)}~${ev.e.slice(5)}` : '';
+  const w = (g.bar / 10 * 100).toFixed(0);
+  return `
+    <div class="ev ${ev.g}">
+      <div class="ev-title">
+        <span class="grade ${ev.g}">${g.label}</span>${ev.title}
+      </div>
+      <div class="sub" style="font-size:12px;color:#9C8E73;margin-bottom:4px">중요도 ${g.bar}/10 · ${g.name}${dur}</div>
+      <div class="bar"><div style="width:${w}%"></div></div>
+      <div class="scen bull"><b>📈 호재</b> · ${tpl.bull}</div>
+      <div class="scen bear"><b>📉 악재</b> · ${tpl.bear}</div>
+      <div class="scen tip"><b>💡 팁</b> · ${tpl.tip}</div>
+    </div>`;
+}
+
+function changeMonth(delta) {
+  viewM += delta;
+  if (viewM < 0) { viewM = 11; viewY--; }
+  if (viewM > 11) { viewM = 0; viewY++; }
+  renderMonth();
+}
+function goToday() {
+  viewY = today.getFullYear(); viewM = today.getMonth();
+  selected = ymd(today);
+  renderMonth(); renderSheet();
+}
+
+// ====================================================================
+// 오늘 화면
+// ====================================================================
+function renderTodayScreen() {
+  const wd = ['일','월','화','수','목','금','토'][today.getDay()];
+  document.getElementById('today-date').textContent =
+    `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일 (${wd})`;
+  // 주 스트립
+  const strip = document.getElementById('week-strip');
+  strip.innerHTML = '';
+  const base = new Date(today); base.setDate(today.getDate() - today.getDay());
+  for (let i=0;i<14;i++) {
+    const d = new Date(base); d.setDate(base.getDate()+i);
+    const k = ymd(d);
+    const wdn = ['일','월','화','수','목','금','토'][d.getDay()];
+    const evs = (byDate[k] || []).slice().sort((a,b)=>GRADE_ORDER[a.g]-GRADE_ORDER[b.g]);
+    const dotsHtml = evs.slice(0,4).map(e=>`<div class="dot ${e.g}"></div>`).join('');
+    const pill = document.createElement('button');
+    pill.className = 'pill' + (k===ymd(today) ? ' active' : '');
+    pill.style.border = '0';
+    pill.innerHTML = `<div class="d">${wdn}</div><div class="n">${d.getDate()}</div><div class="grades">${dotsHtml}</div>`;
+    pill.onclick = () => {
+      selected = k;
+      viewY = d.getFullYear(); viewM = d.getMonth();
+      switchTab('cal'); renderMonth(); renderSheet();
+    };
+    strip.appendChild(pill);
+  }
+  // 오늘 + 다음 5개
+  const upcoming = [];
+  for (let off=0; off<60 && upcoming.length<6; off++) {
+    const d = new Date(today); d.setDate(today.getDate()+off);
+    const k = ymd(d);
+    (byDate[k] || []).forEach(ev => upcoming.push({...ev, k, off}));
+  }
+  upcoming.sort((a,b)=> a.k===b.k ? GRADE_ORDER[a.g]-GRADE_ORDER[b.g] : a.k.localeCompare(b.k));
+  const root = document.getElementById('today-events');
+  if (!upcoming.length) {
+    root.innerHTML = '<div class="empty-msg">앞으로 60일 안에 일정이 없어요</div>';
+  } else {
+    root.innerHTML = upcoming.slice(0,6).map(ev => {
+      const d = parseYmd(ev.k);
+      const wdn = ['일','월','화','수','목','금','토'][d.getDay()];
+      const offLabel = ev.off===0 ? '오늘' : ev.off===1 ? '내일' : `D-${ev.off}`;
+      return `<div style="margin-bottom:6px;color:#9C8E73;font-size:13px;font-weight:600">
+                ${offLabel} · ${d.getMonth()+1}/${d.getDate()} (${wdn})
+              </div>` + renderEvent(ev);
+    }).join('');
+  }
+}
+
+// ====================================================================
+// 탭 전환
+// ====================================================================
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.screen===name));
+  if (name === 'today') renderTodayScreen();
+  if (name === 'cal') { renderMonth(); renderSheet(); }
+  window.scrollTo(0,0);
+}
+
+// ====================================================================
+// PWA 설치 배너
+// ====================================================================
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+});
+
+// ====================================================================
+// 초기화
+// ====================================================================
+document.getElementById('ev-count').textContent = `${EVENTS.length} 개 (2026 H2)`;
+renderMonth();
+renderSheet();
+
+// 서비스 워커
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
