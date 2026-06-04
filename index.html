@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>경제캘린더 · 매크로 일정 한눈에</title>
+<title>경제캘린더 Pro · 2027 미리보기 포함</title>
 <link rel="manifest" href="manifest.json">
 <style>
   :root {
@@ -279,8 +279,8 @@
 <section class="screen active" id="screen-cal">
   <div class="topbar">
     <div class="brand">
-      <div class="mark">$</div>
-      <div class="name">경제캘린더<span class="sub"> · macro</span></div>
+      <div class="mark" style="background:linear-gradient(135deg, #D4A017 0%, #B8860B 100%)">★</div>
+      <div class="name">경제캘린더<span class="sub" style="color:#D4A017;font-weight:700"> · Pro</span></div>
     </div>
     <button class="today-btn" onclick="goToday()">오늘</button>
   </div>
@@ -376,11 +376,14 @@
     <h3>데이터</h3>
     <div class="s-group">
       <div class="s-row"><div><div class="lbl">버전</div></div>
-        <div class="sub" id="ver">v1.1.0</div></div>
+        <div class="sub" id="ver">v1.0.0 Pro</div></div>
       <div class="s-row"><div><div class="lbl">등록된 이벤트</div></div>
         <div class="sub" id="ev-count">— 개</div></div>
       <div class="s-row"><div><div class="lbl">데이터 기간</div></div>
-        <div class="sub">2026년 6~12월</div></div>
+        <div class="sub">2026년 6월 ~ 2027년 3월 ★</div></div>
+      <div class="s-row"><div><div class="lbl">Pro 라이센스</div>
+        <div class="sub">✓ 활성 · 평생 사용</div></div>
+        <div class="badge-soon" style="background:#FEF3C7;color:#92400E">PRO</div></div>
     </div>
 
     <h3>정보</h3>
@@ -522,6 +525,35 @@ const EVENTS = [
   ['2026-12-18',null,'B','US_OPT','🇺🇸 미국 옵션만기 (SPX 분기)'],
   ['2026-12-18',null,'B','BOJ','🇯🇵 일본 BOJ 금리결정'],
   ['2026-12-23',null,'A','PCE','🇺🇸 미국 PCE (11월)'],
+
+  // ════════════════════════════════════════
+  // ★ Pro 전용 — 2027년 1분기 미리보기
+  // ════════════════════════════════════════
+  ['2027-01-04',null,'S','KR_TRADE','🇰🇷 한국 12월 수출입 ⭐Pro'],
+  ['2027-01-08',null,'S','NFP','🇺🇸 미국 NFP (12월 고용) ⭐Pro'],
+  ['2027-01-13',null,'S','CPI','🇺🇸 미국 CPI (12월) ⭐Pro'],
+  ['2027-01-14',null,'C','KR_OPT','🇰🇷 한국 옵션만기 ⭐Pro'],
+  ['2027-01-21',null,'S','KR_BOK','🇰🇷 한국 금통위 ⭐Pro'],
+  ['2027-01-26','2027-01-27','S','FOMC','🇺🇸 FOMC 금리결정 ⭐Pro'],
+  ['2027-01-28','2027-01-29','B','BOJ','🇯🇵 일본 BOJ 금리결정 ⭐Pro'],
+  ['2027-01-29',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash ⭐Pro'],
+  ['2027-01-29',null,'A','PCE','🇺🇸 미국 PCE (12월) ⭐Pro'],
+  ['2027-02-01',null,'S','KR_TRADE','🇰🇷 한국 1월 수출입 ⭐Pro'],
+  ['2027-02-05',null,'S','NFP','🇺🇸 미국 NFP (1월 고용) ⭐Pro'],
+  ['2027-02-10',null,'S','CPI','🇺🇸 미국 CPI (1월) ⭐Pro'],
+  ['2027-02-11',null,'C','KR_OPT','🇰🇷 한국 옵션만기 ⭐Pro'],
+  ['2027-02-25',null,'S','KR_BOK','🇰🇷 한국 금통위 ⭐Pro'],
+  ['2027-02-26',null,'A','PCE','🇺🇸 미국 PCE (1월) ⭐Pro'],
+  ['2027-02-26',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash ⭐Pro'],
+  ['2027-03-02',null,'S','KR_TRADE','🇰🇷 한국 2월 수출입 ⭐Pro'],
+  ['2027-03-05',null,'S','NFP','🇺🇸 미국 NFP (2월 고용) ⭐Pro'],
+  ['2027-03-10',null,'S','CPI','🇺🇸 미국 CPI (2월) ⭐Pro'],
+  ['2027-03-11',null,'S','WITCH','🇰🇷 네마녀의날 ⭐Pro'],
+  ['2027-03-16','2027-03-17','S','FOMC','🇺🇸 FOMC 금리결정 (점도표) ⭐Pro'],
+  ['2027-03-18','2027-03-19','B','BOJ','🇯🇵 일본 BOJ 금리결정 ⭐Pro'],
+  ['2027-03-19',null,'B','US_OPT','🇺🇸 미국 옵션만기 (SPX 분기) ⭐Pro'],
+  ['2027-03-26',null,'A','PCE','🇺🇸 미국 PCE (2월) ⭐Pro'],
+  ['2027-03-31',null,'B','EU_CPI','🇪🇺 유로존 CPI Flash ⭐Pro'],
 ];
 
 // ====================================================================
