@@ -1,6 +1,6 @@
 // 경제캘린더 PWA 서비스 워커 v1.1.0
 // 전략: Network First → 캐시 폴백 (오프라인 동작 유지 + 업데이트 즉시 전파)
-const CACHE = 'econ-cal-v1.1.0';
+const CACHE = 'econ-cal-v1.2.0';
 const PRECACHE = ['./', './index.html', './manifest.json',
                   './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
