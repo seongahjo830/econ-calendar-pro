@@ -98,34 +98,37 @@
   .weekdays div:first-child { color:#C2185B; opacity:0.7; }
   .weekdays div:last-child  { color:var(--accent); opacity:0.7; }
 
-  .grid { display:grid; grid-template-columns:repeat(7,1fr); padding:0 12px 8px;
-    gap:1px; }
-  .cell { aspect-ratio:1/1.18; position:relative; border-radius:14px;
-    padding:8px 4px 6px; display:flex; flex-direction:column; align-items:center;
+  .grid { display:grid; grid-template-columns:repeat(7,1fr); padding:0 6px 8px;
+    gap:2px; }
+  .cell { aspect-ratio:0.62; position:relative; border-radius:10px;
+    padding:5px 3px 4px; display:flex; flex-direction:column; align-items:stretch;
     background:transparent; transition:background .15s;
-    border:none; cursor:pointer; color:inherit; }
+    border:none; cursor:pointer; color:inherit; overflow:hidden; }
   .cell.empty { visibility:hidden; }
   .cell:active { background:var(--bg-soft); }
+  .cell.selected { background:var(--bg-soft); }
+  .cell.today { background:var(--accent-soft); }
 
-  .num-wrap { position:relative; display:flex; align-items:center; justify-content:center;
-    margin-bottom:5px; }
-  .num { font-size:15.5px; font-weight:600; width:30px; height:30px; line-height:30px;
-    text-align:center; border-radius:50%; letter-spacing:-0.02em;
-    transition:all .2s; font-variant-numeric: tabular-nums; }
-  .cell.today .num { background:var(--ink); color:white; font-weight:700; }
-  .cell.selected:not(.today) .num { background:var(--accent-soft); color:var(--accent); font-weight:700; }
+  .num-wrap { display:flex; align-items:center; justify-content:flex-start;
+    padding:0 4px; margin-bottom:3px; }
+  .num { font-size:13px; font-weight:700; letter-spacing:-0.02em;
+    font-variant-numeric: tabular-nums; line-height:1; }
+  .cell.today .num { color:var(--accent); font-weight:800; }
   .cell.sat .num { color:var(--accent); }
   .cell.sun .num { color:#C2185B; }
-  .cell.today.sat .num, .cell.today.sun .num { color:white; }
-  .cell.dim .num { color:var(--ink-4); }
 
-  .dots { display:flex; gap:3px; flex-wrap:wrap; justify-content:center;
-    align-content:flex-start; min-height:6px; max-width:36px; }
-  .dot { width:5px; height:5px; border-radius:50%; flex:0 0 5px; }
-  .dot.S { background:var(--s); }
-  .dot.A { background:var(--a); }
-  .dot.B { background:var(--b); }
-  .dot.C { background:var(--c); }
+  .chips { display:flex; flex-direction:column; gap:2px; flex:1; min-height:0; }
+  .chip { font-size:8.5px; font-weight:700; line-height:1.25;
+    padding:2px 4px 2px 5px; border-radius:4px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    letter-spacing:-0.02em; border-left:2px solid; }
+  .chip.S { background:var(--s-bg); color:#991B1B; border-left-color:var(--s); }
+  .chip.A { background:var(--a-bg); color:#9F1239; border-left-color:var(--a); }
+  .chip.B { background:var(--b-bg); color:#9A3412; border-left-color:var(--b); }
+  .chip.C { background:var(--c-bg); color:#854D0E; border-left-color:var(--c); }
+  .chip .em { font-size:9px; margin-right:1px; }
+  .chip-more { font-size:8px; color:var(--ink-3); padding:1px 3px;
+    font-weight:700; letter-spacing:0.02em; }
 
   /* ── 일정 시트 ── */
   .sheet { background:var(--bg-card); margin:8px 14px 18px; border-radius:var(--r-xl);
@@ -574,6 +577,18 @@ EVENTS.forEach(ev => {
 });
 const ORD = {S:0, A:1, B:2, C:3};
 
+const SHORT = {
+  FOMC:'FOMC', CPI:'CPI', NFP:'NFP', PCE:'PCE',
+  KR_TRADE:'수출입', KR_BOK:'금통위',
+  BOJ:'BOJ', EU_CPI:'유로CPI',
+  WITCH:'네마녀', KR_OPT:'옵션', US_OPT:'미옵션',
+  JACKSON:'잭슨홀',
+};
+function flagOf(title) {
+  const m = title.match(/^(\p{Extended_Pictographic}\p{Extended_Pictographic}?|🇰🇷|🇺🇸|🇯🇵|🇪🇺|🌐)/u);
+  return m ? m[0] : '';
+}
+
 // ====================================================================
 // 상태
 // ====================================================================
@@ -620,13 +635,23 @@ function renderMonth() {
     wrap.appendChild(num); cell.appendChild(wrap);
 
     const evs = (byDate[k] || []).slice().sort((a,b)=>ORD[a.g]-ORD[b.g]);
-    const dots = document.createElement('div'); dots.className='dots';
-    evs.slice(0,4).forEach(ev => {
-      const dot = document.createElement('div');
-      dot.className = 'dot ' + ev.g;
-      dots.appendChild(dot);
+    const chips = document.createElement('div'); chips.className='chips';
+    const visible = evs.slice(0, 3);
+    visible.forEach(ev => {
+      const chip = document.createElement('div');
+      chip.className = 'chip ' + ev.g;
+      const flag = flagOf(ev.title);
+      const label = SHORT[ev.t] || ev.title.replace(/^.*?\s/, '').slice(0,4);
+      chip.innerHTML = <span class="em">+flag+</span>+label;
+      chips.appendChild(chip);
     });
-    cell.appendChild(dots);
+    if (evs.length > 3) {
+      const more = document.createElement('div');
+      more.className = 'chip-more';
+      more.textContent = '+' + (evs.length - 3);
+      chips.appendChild(more);
+    }
+    cell.appendChild(chips);
 
     cell.onclick = () => { selected = k; renderMonth(); renderSheet(); };
     grid.appendChild(cell);
