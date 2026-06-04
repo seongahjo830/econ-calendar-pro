@@ -554,9 +554,27 @@ document.getElementById('ev-count').textContent = `${EVENTS.length} 개 (2026 H2
 renderMonth();
 renderSheet();
 
-// 서비스 워커
+// 서비스 워커 — 새 버전 감지 시 즉시 적용
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      if (!newSW) return;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          // 새 버전 준비 — 즉시 적용
+          newSW.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    });
+    // 컨트롤러 바뀌면 새로고침 (옛 화면 → 새 화면)
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+  }).catch(()=>{});
 }
 </script>
 </body>
