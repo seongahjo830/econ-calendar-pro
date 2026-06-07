@@ -184,12 +184,12 @@
   .scen.tip  { background:var(--tip-bg);  } .scen.tip  .lbl { color:var(--tip);  }
 
   /* ── 하단 탭 ── */
-  .tabs { position:sticky; bottom:0; background:rgba(250,250,247,0.92);
+  .tabs { position:fixed; left:0; right:0; bottom:0; z-index:100;
+    background:rgba(250,250,247,0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-top:1px solid var(--line-soft); display:flex;
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
-    margin-top: 4px;
   }
   .tab { flex:1; text-align:center; padding:7px 0 4px; background:transparent;
     border:0; color:var(--ink-3); font-size:10.5px; font-weight:600;
@@ -200,7 +200,8 @@
   .tab.active .ic { transform:scale(1.05); }
 
   /* ── 화면 전환 ── */
-  .screen { display:none; animation:fadeIn .25s ease-out; }
+  .screen { display:none; animation:fadeIn .25s ease-out;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
   .screen.active { display:block; }
   @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 
@@ -394,7 +395,7 @@
       <div class="s-row"><div><div class="lbl">개인정보 처리방침</div></div>
         <a href="privacy.html" class="chev">›</a></div>
       <div class="s-row"><div><div class="lbl">문의</div>
-        <div class="sub">tjddk75475475@gmail.com</div></div></div>
+        <div class="sub">wjwjwjwjrjqhkfk@naver.com</div></div></div>
       <div class="s-row"><div><div class="lbl">데이터 출처</div>
         <div class="sub">Fed · BOK · BOJ · ECB · 기재부</div></div></div>
     </div>
