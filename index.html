@@ -213,6 +213,17 @@
     line-height:1.05; margin:2px 0 4px; font-variant-numeric:tabular-nums; }
   .today-hero .date-sub { color:var(--ink-3); font-size:14px; font-weight:500; }
 
+  /* ── Pro: 다음 핵심 일정 D-day 배너 ── */
+  .next-s { margin:16px 16px 0; padding:14px 16px; border-radius:18px;
+    background:linear-gradient(135deg,#D4A017,#B8860B); color:#fff;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 4px 14px rgba(184,134,11,0.28); cursor:pointer; }
+  .next-s .ns-cap { font-size:11px; font-weight:700; letter-spacing:0.04em; opacity:0.92; }
+  .next-s .ns-title { font-size:16px; font-weight:800; margin-top:3px; letter-spacing:-0.02em; }
+  .next-s .ns-date { font-size:12px; opacity:0.9; margin-top:2px; }
+  .next-s .ns-dday { font-size:30px; font-weight:900; letter-spacing:-0.03em;
+    font-variant-numeric:tabular-nums; white-space:nowrap; padding-left:14px; }
+
   .week-strip { display:flex; gap:6px; padding:18px 16px 0; overflow-x:auto;
     -webkit-overflow-scrolling:touch; scrollbar-width:none; }
   .week-strip::-webkit-scrollbar { display:none; }
@@ -328,6 +339,7 @@
       <div class="name">오늘 일정</div>
     </div>
   </div>
+  <div class="next-s" id="next-s" style="display:none"></div>
   <div class="today-hero">
     <div class="label" id="today-label">오늘</div>
     <div class="date-big" id="today-date"></div>
@@ -566,7 +578,7 @@ const EVENTS = [
 function dateRange(s, e) {
   const out = [], a = new Date(s+'T00:00:00'), b = e ? new Date(e+'T00:00:00') : a;
   for (let d=new Date(a); d<=b; d.setDate(d.getDate()+1))
-    out.push(d.toISOString().slice(0,10));
+    out.push(ymd(d));
   return out;
 }
 const byDate = {};
@@ -643,7 +655,7 @@ function renderMonth() {
       chip.className = 'chip ' + ev.g;
       const flag = flagOf(ev.title);
       const label = SHORT[ev.t] || ev.title.replace(/^.*?\s/, '').slice(0,4);
-      chip.innerHTML = <span class="em">+flag+</span>+label;
+      chip.innerHTML = `<span class="em">${flag}</span>${label}`;
       chips.appendChild(chip);
     });
     if (evs.length > 3) {
@@ -713,6 +725,31 @@ function renderTodayScreen() {
     `${today.getMonth()+1}월 ${today.getDate()}일`;
   document.getElementById('today-sub').textContent =
     `${today.getFullYear()}년 · ${WD[today.getDay()]}요일`;
+
+  // Pro: 다음 핵심(S급) 일정 D-day 배너
+  const nsEl = document.getElementById('next-s');
+  let nextS = null;
+  for (let off=0; off<200 && !nextS; off++) {
+    const d = new Date(today); d.setDate(today.getDate()+off);
+    const evs = (byDate[ymd(d)] || []).filter(e => e.g === 'S');
+    if (evs.length) nextS = { ev: evs[0], off, k: ymd(d), d };
+  }
+  if (nextS) {
+    const dd = nextS.off === 0 ? 'D-DAY' : `D-${nextS.off}`;
+    const name = nextS.ev.title.replace(/\s*⭐Pro\s*/,'');
+    nsEl.style.display = 'flex';
+    nsEl.innerHTML =
+      `<div><div class="ns-cap">🔥 다음 핵심 일정</div>` +
+      `<div class="ns-title">${name}</div>` +
+      `<div class="ns-date">${nextS.d.getMonth()+1}월 ${nextS.d.getDate()}일 · ${WD[nextS.d.getDay()]}요일</div></div>` +
+      `<div class="ns-dday">${dd}</div>`;
+    nsEl.onclick = () => {
+      selected = nextS.k; viewY = nextS.d.getFullYear(); viewM = nextS.d.getMonth();
+      switchTab('cal'); renderMonth(); renderSheet();
+    };
+  } else {
+    nsEl.style.display = 'none';
+  }
   const strip = document.getElementById('week-strip');
   strip.innerHTML = '';
   const base = new Date(today); base.setDate(today.getDate() - today.getDay());
